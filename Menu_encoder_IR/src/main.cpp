@@ -2,19 +2,23 @@
 #include <Wire.h>
 #include <IRremote.hpp>
 #include <LiquidCrystal_I2C.h>
-#include<Encoder.h>
-LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+#define CLK PD3
+#define DT  PD2
+#define SW  PC2
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 // create an encoder object
-Encoder encoder(2, 3);
 IRrecv receiver(7);
 // define some constants for the menu options
-int8_t numOptions = 3;
-const char* options[] = {"Treble", "Volume", "Bass", "Gain"};
+int8_t numOptions = 4;
+const char* menu[] = {"Treble", "Volume", "Bass", "Gain","Equalizer"};
+const char* submenu[] = {"Middle","Bass","Flat"};
 int8_t currentOption = 0;
-int16_t lastStateCLK = -200;
+
+int16_t lastStateCLK;
+int16_t currentStateCLK;
+
 uint8_t newPos;
-uint16_t lastMillis;
 uint16_t actualMillis;
 uint16_t menuMillis;
 uint8_t irMillis;
@@ -26,83 +30,102 @@ void setup()
   lcd.init();
   lcd.backlight();
   IrReceiver.enableIRIn();
+
+  pinMode(CLK, INPUT);
+  pinMode(DT, INPUT);
+
+  lastStateCLK = digitalRead(CLK);
 }
 
 void loop() 
 {
-  actualMillis = millis();
+  lcd.setCursor(0,1);
+  lcd.print("   ");
+  lcd.setCursor(0,1);
+  lcd.print(currentOption);
   lcd.setCursor(0, 1);
-  if(actualMillis - menuMillis > 200)
+
+  currentStateCLK = digitalRead(CLK);
+  actualMillis = millis();
+  
+  if(actualMillis - menuMillis > 100)
   {
     menuMillis = actualMillis;
     menuOption();
   }
-  
-  if(actualMillis - lastMillis > 300)
-  {
-    lastMillis = actualMillis;
-    newPos = encoder.read();
-    if(IrReceiver.decode())
-    {
-    codeIR();
-    IrReceiver.resume();
-    }
-  }
-  if(actualMillis - irMillis > 150)
+  if(actualMillis - irMillis > 200)
   {
     irMillis = actualMillis;
-    newPos = encoder.read();
     if(IrReceiver.decode())
     {
     codeIR();
     IrReceiver.resume();
     }
   }
-  if (newPos != lastStateCLK) 
+
+  if (currentStateCLK != lastStateCLK && currentStateCLK == 1) 
   {
-    currentOption += 1;
-    if(currentOption < 0)
+    if(digitalRead(DT) != currentStateCLK)
     {
-      currentOption = numOptions;
+      currentOption -= 1;
     }
-    else if (currentOption > numOptions)
+    else 
     {
-      currentOption = 0;
+      currentOption += 1;
     }
-
-    lastStateCLK = newPos;
-    lcd.setCursor(4,0);
-    lcd.print("<");
-    lcd.setCursor(11,0);
-    lcd.print(">");
   }
-  
+  lastStateCLK = currentStateCLK;
 
-  
+  if(currentOption < 0)
+  {
+    currentOption = numOptions;
+  }
+  else if (currentOption > numOptions)
+  {
+    currentOption = 0;
+  }
 }
 void menuOption()
 {
-if (currentOption == 0 || currentOption == 1)
+  lcd.setCursor(1,0);
+  lcd.print("<");
+  lcd.setCursor(14,0);
+  lcd.print(">");
+
+  if (currentOption == 0 || currentOption == 1)
   {
+    lcd.setCursor(4,0);
+    lcd.print("          ");
     lcd.setCursor(5,0);
-    lcd.print("      ");
-    lcd.setCursor(5,0);
-    lcd.print(options[currentOption]);
+    lcd.print(menu[currentOption]);
+  }
+  else if(currentOption == 4)
+  {
+    lcd.setCursor(4,0);
+    lcd.print("       ");
+    lcd.setCursor(4,0);
+    lcd.print(menu[currentOption]);
   }
   else
   {
-    lcd.setCursor(5,0);
-    lcd.print("      ");
+    lcd.setCursor(4,0);
+    lcd.print("         ");
     lcd.setCursor(6,0);
-    lcd.print(options[currentOption]);
+    lcd.print(menu[currentOption]);
   }
+  
+
+
+
+
+
 }
 void codeIR()
 {
   switch (IrReceiver.decodedIRData.command)
   {
     case 90:  // >
-      if(currentOption > 3)
+      if(currentOption > 4)
       {
         currentOption = 0;
       }
@@ -118,11 +141,11 @@ void codeIR()
     case 8:   // <
       if(currentOption < 0)
       {
-        currentOption = 3;
+        currentOption = 4;
       }
       else
       {
-        currentOption -=1;
+        currentOption -= 1;
       }
       break;
     case 24:  
