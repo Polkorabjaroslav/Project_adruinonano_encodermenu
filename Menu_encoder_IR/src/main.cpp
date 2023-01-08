@@ -6,10 +6,11 @@
 #define CLK PD3
 #define DT  PD2
 #define SW  PC2
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-// create an encoder object
+
 IRrecv receiver(7);
-// define some constants for the menu options
+
 int8_t numOptions = 4;
 const char* menu[] = {"Treble", "Volume", "Bass", "Gain","Equalizer"};
 const char* submenu[] = {"Middle","Bass","Flat"};
@@ -18,9 +19,7 @@ int8_t currentOption = 0;
 int16_t lastStateCLK;
 int16_t currentStateCLK;
 
-uint8_t newPos;
 uint16_t actualMillis;
-uint16_t menuMillis;
 uint8_t irMillis;
 uint8_t resumMillis;  
 
@@ -29,6 +28,8 @@ void menuOption();
 void handleEncoder();
 void checkValues();
 void changeMenuTab(uint8_t value);
+void printArrows();
+void clearLine(uint8_t line);
 
 void setup() 
 {
@@ -111,39 +112,25 @@ void handleEncoder()
   lastStateCLK = currentStateCLK;
 }
 
-void menuOption()
+void printArrows()
 {
   lcd.setCursor(1,0);
   lcd.print("<");
   lcd.setCursor(14,0);
   lcd.print(">");
+}
 
-  lcd.setCursor(4,0);
+void clearLine(uint8_t line)
+{
+  lcd.setCursor(4, line);
   lcd.print("          ");
+}
 
-  int wordOffset = (sizeof(menu[currentOption]) / sizeof(char)) / 2;
-
-  lcd.setCursor(8 - wordOffset, 0);
-
-  // switch (currentOption)
-  // {
-  //   case 0:
-  //     lcd.setCursor(5,0);
-  //     break;
-    
-  //   case 1:
-  //     lcd.setCursor(5,0);
-  //     break;
-
-  //   case 4:
-  //     lcd.setCursor(4,0);
-  //     break;
-
-  //   default:
-  //     lcd.setCursor(6,0);
-  //     break;
-  // }
-
+void menuOption()
+{
+  printArrows();
+  clearLine(0);
+  lcd.setCursor(8 - strlen(menu[currentOption]) / 2, 0);
   lcd.print(menu[currentOption]);
 }
 
