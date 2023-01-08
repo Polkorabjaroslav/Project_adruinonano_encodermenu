@@ -28,6 +28,7 @@ void codeIR();
 void menuOption();
 void handleEncoder();
 void checkValues();
+void changeMenuTab(uint8_t value);
 
 void setup() 
 {
@@ -56,7 +57,7 @@ void loop()
   //   menuMillis = actualMillis;
   //   menuOption();
   // }
-  
+
   if(actualMillis - irMillis > 200)
   {
     irMillis = actualMillis;
