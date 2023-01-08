@@ -22,6 +22,7 @@ uint8_t newPos;
 uint16_t actualMillis;
 uint16_t menuMillis;
 uint8_t irMillis;
+uint8_t resumMillis;  
 
 void codeIR();
 void menuOption();
@@ -59,8 +60,13 @@ void loop()
     if(IrReceiver.decode())
     {
     codeIR();
-    IrReceiver.resume();
+      if(actualMillis - resumMillis > 100)
+      {
+        resumMillis = actualMillis;
+        IrReceiver.resume();
+      }
     }
+    
   }
 
   if (currentStateCLK != lastStateCLK && currentStateCLK == 1) 
@@ -114,24 +120,16 @@ void menuOption()
     lcd.print(menu[currentOption]);
   }
   
-
-
-
-
-
 }
 void codeIR()
 {
   switch (IrReceiver.decodedIRData.command)
   {
     case 90:  // >
+      currentOption +=1;
       if(currentOption > 4)
       {
         currentOption = 0;
-      }
-      else
-      {
-        currentOption +=1;
       }
       break;
     case 82:  // V
@@ -139,13 +137,10 @@ void codeIR()
       lcd.print("down");
       break;
     case 8:   // <
+      currentOption -= 1;
       if(currentOption < 0)
       {
         currentOption = 4;
-      }
-      else
-      {
-        currentOption -= 1;
       }
       break;
     case 24:  
