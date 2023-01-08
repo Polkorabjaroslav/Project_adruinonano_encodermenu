@@ -78,7 +78,7 @@ void loop()
 
 void changeMenuTab(uint8_t value)
 {
-  currentOption =+ value;
+  currentOption += value;
   checkValues();
   menuOption();
 }
