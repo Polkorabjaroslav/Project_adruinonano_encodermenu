@@ -6,10 +6,11 @@
 #define CLK PD3
 #define DT  PD2
 #define SW  PC2
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-// create an encoder object
+
 IRrecv receiver(7);
-// define some constants for the menu options
+
 int8_t numOptions = 4;
 const char* menu[] = {"Treble", "Volume", "Bass", "Gain","Equalizer"};
 const char* submenu[] = {"Middle","Bass","Flat"};
@@ -18,9 +19,7 @@ int8_t currentOption = 0;
 int16_t lastStateCLK;
 int16_t currentStateCLK;
 
-uint8_t newPos;
 uint16_t actualMillis;
-uint16_t menuMillis;
 uint8_t irMillis;
 uint8_t resumMillis;  
 
@@ -29,6 +28,8 @@ void menuOption();
 void handleEncoder();
 void checkValues();
 void changeMenuTab(uint8_t value);
+void printArrows();
+void clearLine(uint8_t line);
 
 void setup() 
 {
@@ -40,6 +41,7 @@ void setup()
   pinMode(DT, INPUT);
 
   lastStateCLK = digitalRead(CLK);
+  menuOption();
 }
 
 void loop() 
@@ -51,12 +53,6 @@ void loop()
   lcd.setCursor(0, 1);
 
   actualMillis = millis();
-  
-  // if(actualMillis - menuMillis > 100)
-  // {
-  //   menuMillis = actualMillis;
-  //   menuOption();
-  // }
 
   if(actualMillis - irMillis > 200)
   {
@@ -85,11 +81,13 @@ void changeMenuTab(uint8_t value)
 
 void checkValues()
 {
-  if(currentOption < 0)
+  if (currentOption < 0)
   {
     currentOption = numOptions;
+    return;
   }
-  else if (currentOption > numOptions)
+
+  if (currentOption > numOptions)
   {
     currentOption = 0;
   }
@@ -99,7 +97,6 @@ void handleEncoder()
 {
   currentStateCLK = digitalRead(CLK);
 
-   // encoder
   if (currentStateCLK != lastStateCLK && currentStateCLK == 1) 
   {
     if(digitalRead(DT) != currentStateCLK)
@@ -111,38 +108,30 @@ void handleEncoder()
       changeMenuTab(1);
     }
   }
+
   lastStateCLK = currentStateCLK;
 }
 
-void menuOption()
+void printArrows()
 {
   lcd.setCursor(1,0);
   lcd.print("<");
   lcd.setCursor(14,0);
   lcd.print(">");
+}
 
-  if (currentOption == 0 || currentOption == 1)
-  {
-    lcd.setCursor(4,0);
-    lcd.print("          ");
-    lcd.setCursor(5,0);
-    lcd.print(menu[currentOption]);
-  }
-  else if(currentOption == 4)
-  {
-    lcd.setCursor(4,0);
-    lcd.print("       ");
-    lcd.setCursor(4,0);
-    lcd.print(menu[currentOption]);
-  }
-  else
-  {
-    lcd.setCursor(4,0);
-    lcd.print("         ");
-    lcd.setCursor(6,0);
-    lcd.print(menu[currentOption]);
-  }
-  
+void clearLine(uint8_t line)
+{
+  lcd.setCursor(4, line);
+  lcd.print("          ");
+}
+
+void menuOption()
+{
+  printArrows();
+  clearLine(0);
+  lcd.setCursor(8 - strlen(menu[currentOption]) / 2, 0);
+  lcd.print(menu[currentOption]);
 }
 
 void codeIR()
