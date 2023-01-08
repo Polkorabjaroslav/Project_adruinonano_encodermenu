@@ -26,6 +26,9 @@ uint8_t resumMillis;
 
 void codeIR();
 void menuOption();
+void handleEncoder();
+void checkValues();
+
 void setup() 
 {
   lcd.init();
@@ -46,14 +49,14 @@ void loop()
   lcd.print(currentOption);
   lcd.setCursor(0, 1);
 
-  currentStateCLK = digitalRead(CLK);
   actualMillis = millis();
   
-  if(actualMillis - menuMillis > 100)
-  {
-    menuMillis = actualMillis;
-    menuOption();
-  }
+  // if(actualMillis - menuMillis > 100)
+  // {
+  //   menuMillis = actualMillis;
+  //   menuOption();
+  // }
+  
   if(actualMillis - irMillis > 200)
   {
     irMillis = actualMillis;
@@ -66,22 +69,21 @@ void loop()
         IrReceiver.resume();
       }
     }
-    
   }
 
-  if (currentStateCLK != lastStateCLK && currentStateCLK == 1) 
-  {
-    if(digitalRead(DT) != currentStateCLK)
-    {
-      currentOption -= 1;
-    }
-    else 
-    {
-      currentOption += 1;
-    }
-  }
-  lastStateCLK = currentStateCLK;
+  handleEncoder();
+  checkValues();
+}
 
+void changeMenuTab(uint8_t value)
+{
+  currentOption =+ value;
+  checkValues();
+  menuOption();
+}
+
+void checkValues()
+{
   if(currentOption < 0)
   {
     currentOption = numOptions;
@@ -91,6 +93,26 @@ void loop()
     currentOption = 0;
   }
 }
+
+void handleEncoder()
+{
+  currentStateCLK = digitalRead(CLK);
+
+   // encoder
+  if (currentStateCLK != lastStateCLK && currentStateCLK == 1) 
+  {
+    if(digitalRead(DT) != currentStateCLK)
+    {
+      changeMenuTab(-1);
+    }
+    else 
+    {
+      changeMenuTab(1);
+    }
+  }
+  lastStateCLK = currentStateCLK;
+}
+
 void menuOption()
 {
   lcd.setCursor(1,0);
@@ -121,32 +143,29 @@ void menuOption()
   }
   
 }
+
 void codeIR()
 {
   switch (IrReceiver.decodedIRData.command)
   {
     case 90:  // >
-      currentOption +=1;
-      if(currentOption > 4)
-      {
-        currentOption = 0;
-      }
+      changeMenuTab(1);
       break;
+
     case 82:  // V
       lcd.setCursor(5,1);
       lcd.print("down");
       break;
+
     case 8:   // <
-      currentOption -= 1;
-      if(currentOption < 0)
-      {
-        currentOption = 4;
-      }
+      changeMenuTab(-1);
       break;
+
     case 24:  
       lcd.setCursor(5,1);
       lcd.print("up");
       break;
+
     default:
      break;
   }
