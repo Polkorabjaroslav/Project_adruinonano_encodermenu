@@ -23,6 +23,8 @@ uint16_t actualMillis;
 uint8_t irMillis;
 uint8_t resumMillis;  
 
+uint8_t buttonoption;
+
 void codeIR();
 void menuOption();
 void handleEncoder();
@@ -30,8 +32,11 @@ void checkValues();
 void changeMenuTab(uint8_t value);
 void printArrows();
 void clearLine(uint8_t line);
+void buttonRead();
 
-void setup() 
+
+
+void setup()
 {
   lcd.init();
   lcd.backlight();
@@ -39,19 +44,13 @@ void setup()
 
   pinMode(CLK, INPUT);
   pinMode(DT, INPUT);
-
+  pinMode(SW, INPUT);
   lastStateCLK = digitalRead(CLK);
   menuOption();
 }
 
 void loop() 
 {
-  lcd.setCursor(0,1);
-  lcd.print("   ");
-  lcd.setCursor(0,1);
-  lcd.print(currentOption);
-  lcd.setCursor(0, 1);
-
   actualMillis = millis();
 
   if(actualMillis - irMillis > 200)
@@ -59,7 +58,7 @@ void loop()
     irMillis = actualMillis;
     if(IrReceiver.decode())
     {
-    codeIR();
+      codeIR();
       if(actualMillis - resumMillis > 100)
       {
         resumMillis = actualMillis;
@@ -67,9 +66,38 @@ void loop()
       }
     }
   }
-
+  buttonRead();
   handleEncoder();
   checkValues();
+}
+void buttonRead()
+{
+  if(digitalRead(PD4) == 1)
+  {
+    switch (currentOption)
+    {
+    case 0:
+      lcd.setCursor(0,1);
+      lcd.print(0);
+      break;
+    case 1:
+      lcd.setCursor(0,1);
+      lcd.print(1);
+      break;
+    case 2:
+      lcd.setCursor(0,1);
+      lcd.print(2);
+      break;
+    case 3:
+      lcd.setCursor(0,1);
+      lcd.print(3);
+      break;
+    case 4:
+      lcd.setCursor(0,1);
+      lcd.print(4);
+      break;
+    }
+  }
 }
 
 void changeMenuTab(uint8_t value)
@@ -132,6 +160,7 @@ void menuOption()
   clearLine(0);
   lcd.setCursor(8 - strlen(menu[currentOption]) / 2, 0);
   lcd.print(menu[currentOption]);
+  
 }
 
 void codeIR()
