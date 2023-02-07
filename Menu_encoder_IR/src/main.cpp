@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <IRremote.hpp>
 #include <LiquidCrystal_I2C.h>
+#include <function.h>
 
 #define CLK PD3
 #define DT  PD2
@@ -53,7 +54,7 @@ void loop()
 {
   actualMillis = millis();
 
-  if(actualMillis - irMillis > 200)
+  if(actualMillis - irMillis > 100)
   {
     irMillis = actualMillis;
     if(IrReceiver.decode())
