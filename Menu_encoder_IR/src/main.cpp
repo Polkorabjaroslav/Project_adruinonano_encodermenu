@@ -7,6 +7,7 @@
 #define CLK PD3
 #define DT  PD2
 #define SW  PC2
+#define Button PD4
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -26,6 +27,12 @@ uint8_t resumMillis;
 
 uint8_t buttonoption;
 
+uint8_t gainStart = 0;
+uint8_t volumeStart = 0;
+uint8_t threbleStart = 0;
+uint8_t bassStart = 0;
+
+TDA7440 amp = TDA7440();
 void codeIR();
 void menuOption();
 void handleEncoder();
@@ -34,14 +41,19 @@ void changeMenuTab(uint8_t value);
 void printArrows();
 void clearLine(uint8_t line);
 void buttonRead();
-
-
+void threbleEnc();
+void threbleVal(uint8_t threbleVal);
 
 void setup()
 {
   lcd.init();
   lcd.backlight();
   IrReceiver.enableIRIn();
+  amp.inputGain(gainStart);
+  amp.setVolume(volumeStart);
+  amp.spkAtt(0);
+  amp.setSnd(1,bassStart); //1 Bassy
+  amp.setSnd(2,threbleStart);
 
   pinMode(CLK, INPUT);
   pinMode(DT, INPUT);
@@ -71,32 +83,44 @@ void loop()
   handleEncoder();
   checkValues();
 }
+
 void buttonRead()
 {
-  if(digitalRead(PD4) == 1)
+  if(digitalRead(Button) == 1)
   {
-    switch (currentOption)
+    uint8_t buttonPress = 1;
+    while (buttonPress == 1)
     {
-    case 0:
+      switch (currentOption)
+      {
+      case 0:
+        lcd.setCursor(0,1); // bez toho printu nefacha ????? :tf:
+        lcd.print(1);
+        threbleEnc();
+        break;
+      case 1:
+        lcd.setCursor(0,1);
+        lcd.print(1);
+        break;
+      case 2:
+        lcd.setCursor(0,1);
+        lcd.print(2);
+        break;
+      case 3:
+        lcd.setCursor(0,1);
+        lcd.print(3);
+        break;
+      case 4:
+        lcd.setCursor(0,1);
+        lcd.print(4);
+        break;
+      }
+    if(digitalRead(Button) == 1)
+    {
+      buttonPress = 0;
       lcd.setCursor(0,1);
-      lcd.print(0);
-      break;
-    case 1:
-      lcd.setCursor(0,1);
-      lcd.print(1);
-      break;
-    case 2:
-      lcd.setCursor(0,1);
-      lcd.print(2);
-      break;
-    case 3:
-      lcd.setCursor(0,1);
-      lcd.print(3);
-      break;
-    case 4:
-      lcd.setCursor(0,1);
-      lcd.print(4);
-      break;
+      lcd.print(" ");
+    }
     }
   }
 }
@@ -189,4 +213,40 @@ void codeIR()
     default:
      break;
   }
+}
+
+void threbleEnc()
+{
+  currentStateCLK = digitalRead(CLK);
+
+  if (currentStateCLK != lastStateCLK && currentStateCLK == 1) 
+  {
+    if(digitalRead(DT) != currentStateCLK)
+    {
+      threbleVal(-1);
+    }
+    else 
+    {
+      threbleVal(1);
+    }
+  }
+  lastStateCLK = currentStateCLK;
+}
+
+void threbleVal(uint8_t threbleVal) // uprava počítá blbě 
+{
+  threbleStart += threbleVal;
+
+  if(threbleStart < -7)
+  {
+    threbleStart = -7;
+  return;
+  }
+  if(threbleStart > 7)
+  {
+    threbleStart = 7;
+  }
+  lcd.setCursor(4,1);
+  lcd.print(threbleStart);
+  
 }

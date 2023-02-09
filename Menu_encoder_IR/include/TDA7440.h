@@ -31,7 +31,7 @@ class TDA7440
 	void setVolume(uint8_t volume); // 0 to 48 ( 0 is mute)
 	void setSnd(int8_t val, uint8_t sel); //-7 to +7 , 1 - Bass  | 2 - Trebble
 	void mute();
-	void spkAtt(uint8_t att); // Output attenuation 0 to 79 (db) can be used for balance but not enabled in this code.
+	void spkAtt(uint8_t atten); // Output attenuation 0 to 79 (db) 
   private:
 	void writeWire(char a, char b);
 };
