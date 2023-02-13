@@ -6,6 +6,7 @@ TDA7440::TDA7440()
 {
     Wire.begin();   //comunication start 
 }
+
 void TDA7440::setInput(uint8_t input)   //input selection
 {
     switch(input)

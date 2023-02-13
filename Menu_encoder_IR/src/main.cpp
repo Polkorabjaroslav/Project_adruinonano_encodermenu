@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <IRremote.hpp>
 #include <LiquidCrystal_I2C.h>
-#include <function.h>
+#include "TDA7440.h"
 
 #define CLK PD3
 #define DT  PD2
@@ -26,13 +26,17 @@ uint8_t irMillis;
 uint8_t resumMillis;  
 
 uint8_t buttonoption;
+uint8_t buttonDebounce = 0;
+uint8_t delayDebounce = 100;
+uint8_t buttonPress;
 
 uint8_t gainStart = 0;
 uint8_t volumeStart = 0;
-uint8_t threbleStart = 0;
+int8_t trebleStart = 0;
 uint8_t bassStart = 0;
 
 TDA7440 amp = TDA7440();
+
 void codeIR();
 void menuOption();
 void handleEncoder();
@@ -41,8 +45,9 @@ void changeMenuTab(uint8_t value);
 void printArrows();
 void clearLine(uint8_t line);
 void buttonRead();
-void threbleEnc();
-void threbleVal(uint8_t threbleVal);
+void trebleEnc();
+void trebleVal(int8_t trebleVal);
+void subMenu();
 
 void setup()
 {
@@ -53,7 +58,7 @@ void setup()
   amp.setVolume(volumeStart);
   amp.spkAtt(0);
   amp.setSnd(1,bassStart); //1 Bassy
-  amp.setSnd(2,threbleStart);
+  amp.setSnd(2,trebleStart);// 2 treble
 
   pinMode(CLK, INPUT);
   pinMode(DT, INPUT);
@@ -86,42 +91,58 @@ void loop()
 
 void buttonRead()
 {
-  if(digitalRead(Button) == 1)
+  if(digitalRead(Button) == 1 && buttonPress == 0)
   {
-    uint8_t buttonPress = 1;
-    while (buttonPress == 1)
+    if((millis() - buttonDebounce) > delayDebounce)
     {
-      switch (currentOption)
-      {
-      case 0:
-        lcd.setCursor(0,1); // bez toho printu nefacha ????? :tf:
-        lcd.print(1);
-        threbleEnc();
-        break;
-      case 1:
-        lcd.setCursor(0,1);
-        lcd.print(1);
-        break;
-      case 2:
-        lcd.setCursor(0,1);
-        lcd.print(2);
-        break;
-      case 3:
-        lcd.setCursor(0,1);
-        lcd.print(3);
-        break;
-      case 4:
-        lcd.setCursor(0,1);
-        lcd.print(4);
-        break;
-      }
-    if(digitalRead(Button) == 1)
+     buttonPress = 1;
+     subMenu();
+     buttonDebounce = millis();
+    }
+  }
+}
+
+void subMenu()
+{
+  while (true)
+  {
+    switch (currentOption)
     {
-      buttonPress = 0;
+    case 0:
+      trebleEnc();
+      break;
+    case 1:
       lcd.setCursor(0,1);
-      lcd.print(" ");
+      lcd.print(1);
+      break;
+    case 2:
+      lcd.setCursor(0,1);
+      lcd.print(2);
+      break;
+    case 3:
+      lcd.setCursor(0,1);
+      lcd.print(3);
+      break;
+    case 4:
+      lcd.setCursor(0,1);
+      lcd.print(4);
+      break;
     }
+    if(millis() % 10 == 0) //double press borec
+    {
+      if(digitalRead(Button) == 1 && buttonPress == 1)
+      {
+        if((millis() - buttonDebounce) > delayDebounce) //button debounce 
+        {
+          buttonPress = 0;
+          buttonDebounce = millis();
+          lcd.setCursor(0,1);
+          lcd.print("         ");
+          break;  
+        }
+      }
     }
+    
   }
 }
 
@@ -184,8 +205,7 @@ void menuOption()
   printArrows();
   clearLine(0);
   lcd.setCursor(8 - strlen(menu[currentOption]) / 2, 0);
-  lcd.print(menu[currentOption]);
-  
+  lcd.print(menu[currentOption]);  
 }
 
 void codeIR()
@@ -215,38 +235,49 @@ void codeIR()
   }
 }
 
-void threbleEnc()
+void trebleEnc()
 {
+  if(trebleStart < 0)
+  {
+    lcd.setCursor(6, 1);
+    lcd.print(trebleStart);
+  }
+  if(trebleStart >= 0)
+  {
+    lcd.setCursor(6,1);
+    lcd.print(" ");
+    lcd.setCursor(7, 1);
+    lcd.print(trebleStart);
+  }
+  
   currentStateCLK = digitalRead(CLK);
 
   if (currentStateCLK != lastStateCLK && currentStateCLK == 1) 
   {
     if(digitalRead(DT) != currentStateCLK)
     {
-      threbleVal(-1);
+      trebleVal(-1);
     }
     else 
     {
-      threbleVal(1);
+      trebleVal(1);
     }
   }
   lastStateCLK = currentStateCLK;
 }
 
-void threbleVal(uint8_t threbleVal) // uprava počítá blbě 
+void trebleVal(int8_t trebleVal)  
 {
-  threbleStart += threbleVal;
+  trebleStart += trebleVal;
 
-  if(threbleStart < -7)
+  if(trebleStart < -7)
   {
-    threbleStart = -7;
-  return;
+    trebleStart = -7;
   }
-  if(threbleStart > 7)
+  if(trebleStart > 7)
   {
-    threbleStart = 7;
+    trebleStart = 7;
   }
-  lcd.setCursor(4,1);
-  lcd.print(threbleStart);
   
+  amp.setSnd(2,trebleStart);
 }
