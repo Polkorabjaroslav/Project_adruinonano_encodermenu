@@ -30,10 +30,10 @@ uint8_t buttonDebounce = 0;
 uint8_t delayDebounce = 100;
 uint8_t buttonPress;
 
-uint8_t gainStart = 0;
-uint8_t volumeStart = 0;
+int8_t gainStart = 0;
+int8_t volumeStart = 0;
 int8_t trebleStart = 0;
-uint8_t bassStart = 0;
+int8_t bassStart = 0;
 
 TDA7440 amp = TDA7440();
 
@@ -47,6 +47,8 @@ void clearLine(uint8_t line);
 void buttonRead();
 void trebleEnc();
 void trebleVal(int8_t trebleVal);
+void bassEnc();
+void bassVal(int8_t trebleVal);
 void subMenu();
 
 void setup()
@@ -116,8 +118,7 @@ void subMenu()
       lcd.print(1);
       break;
     case 2:
-      lcd.setCursor(0,1);
-      lcd.print(2);
+      bassEnc();
       break;
     case 3:
       lcd.setCursor(0,1);
@@ -128,21 +129,15 @@ void subMenu()
       lcd.print(4);
       break;
     }
-    if(millis() % 10 == 0) //double press borec
+
+    if(millis() % 10 == 0 && digitalRead(Button) == 1 && buttonPress == 1 && (millis() - buttonDebounce) > delayDebounce) //double press borec
     {
-      if(digitalRead(Button) == 1 && buttonPress == 1)
-      {
-        if((millis() - buttonDebounce) > delayDebounce) //button debounce 
-        {
-          buttonPress = 0;
-          buttonDebounce = millis();
-          lcd.setCursor(0,1);
-          lcd.print("         ");
-          break;  
-        }
-      }
+      buttonPress = 0;
+      buttonDebounce = millis();
+      lcd.setCursor(0,1);
+      lcd.print("         ");
+      break;  
     }
-    
   }
 }
 
@@ -278,6 +273,51 @@ void trebleVal(int8_t trebleVal)
   {
     trebleStart = 7;
   }
-  
   amp.setSnd(2,trebleStart);
+}
+
+void bassEnc()
+{
+  if(bassStart < 0)
+  {
+    lcd.setCursor(6, 1);
+    lcd.print(bassStart);
+  }
+  if(bassStart >= 0)
+  {
+    lcd.setCursor(6,1);
+    lcd.print(" ");
+    lcd.setCursor(7, 1);
+    lcd.print(bassStart);
+  }
+  
+  currentStateCLK = digitalRead(CLK);
+
+  if (currentStateCLK != lastStateCLK && currentStateCLK == 1) 
+  {
+    if(digitalRead(DT) != currentStateCLK)
+    {
+      bassVal(-1);
+    }
+    else 
+    {
+      bassVal(1);
+    }
+  }
+  lastStateCLK = currentStateCLK;
+}
+
+void bassVal(int8_t bassVal)  
+{
+  bassStart += bassVal;
+
+  if(bassStart < -7)
+  {
+    bassStart = -7;
+  }
+  if(bassStart > 7)
+  {
+    bassStart = 7;
+  }
+  amp.setSnd(1,bassStart);
 }
