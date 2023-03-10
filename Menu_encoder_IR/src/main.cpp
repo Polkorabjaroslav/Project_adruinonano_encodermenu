@@ -21,7 +21,6 @@ int8_t currentOption = 0;
 int16_t lastStateCLK;
 int16_t currentStateCLK;
 
-uint16_t actualMillis;
 uint8_t irMillis;
 uint8_t resumMillis;  
 
@@ -37,6 +36,17 @@ int8_t bassStart = 0;
 
 TDA7440 amp = TDA7440();
 
+// XSAF JKSAIHGIJU XD DALIBRO
+int8_t inSubMenu = 0;
+enum menuCommand {
+  Left,
+  Right,
+  ButtonPress,
+  Empty
+};
+
+menuCommand command;
+
 void codeIR();
 void menuOption();
 void handleEncoder();
@@ -51,8 +61,14 @@ void bassEnc();
 void bassVal(int8_t trebleVal);
 void subMenu();
 
+void handleIR();
+void handleMenu();
+void handleSubMenu();
+void handleMainMenu();
+
 void setup()
 {
+  command = Empty;
   lcd.init();
   lcd.backlight();
   IrReceiver.enableIRIn();
@@ -71,14 +87,75 @@ void setup()
 
 void loop() 
 {
-  actualMillis = millis();
+  buttonRead();
+  handleMenu();
+  checkValues();
+}
+
+void handleMenu()
+{
+  handleIR();
+  handleEncoder();
+
+  if (command == Empty)
+    return;
+
+  if (command == ButtonPress)
+  {
+    inSubMenu = inSubMenu == 0 ? 1 : 0;
+    return;
+  }
+
+  if (inSubMenu)
+    handleSubMenu();
+  else
+    handleMainMenu();
+}
+
+void handleMainMenu()
+{
+  switch (command)
+  {
+    case Left:
+      changeMenuTab(-1);
+      break;
+
+    case Right:
+      changeMenuTab(1);
+      break;
+  
+    default:
+      break;
+  }
+}
+
+void handleSubMenu()
+{
+  switch (command)
+  {
+    case Left:
+      break;
+
+    case Right:
+    break;
+  
+    default:
+      break;
+  }
+}
+
+void handleIR()
+{
+  uint16_t actualMillis = millis();
 
   if(actualMillis - irMillis > 100)
   {
     irMillis = actualMillis;
+
     if(IrReceiver.decode())
     {
       codeIR();
+
       if(actualMillis - resumMillis > 100)
       {
         resumMillis = actualMillis;
@@ -86,10 +163,20 @@ void loop()
       }
     }
   }
-  buttonRead();
-  handleEncoder();
-  checkValues();
 }
+
+// void buttonRead()
+// {
+//   if(digitalRead(Button) == 1 && buttonPress == 0)
+//   {
+//     if((millis() - buttonDebounce) > delayDebounce)
+//     {
+//       buttonPress = 1;
+//       subMenu();
+//       buttonDebounce = millis();
+//     }
+//   }
+// }
 
 void buttonRead()
 {
@@ -97,9 +184,8 @@ void buttonRead()
   {
     if((millis() - buttonDebounce) > delayDebounce)
     {
-     buttonPress = 1;
-     subMenu();
-     buttonDebounce = millis();
+      command = ButtonPress;
+      buttonDebounce = millis();
     }
   }
 }
@@ -110,27 +196,31 @@ void subMenu()
   {
     switch (currentOption)
     {
-    case 0:
-      trebleEnc();
-      break;
-    case 1:
-      lcd.setCursor(0,1);
-      lcd.print(1);
-      break;
-    case 2:
-      bassEnc();
-      break;
-    case 3:
-      lcd.setCursor(0,1);
-      lcd.print(3);
-      break;
-    case 4:
-      lcd.setCursor(0,1);
-      lcd.print(4);
-      break;
+      case 0:
+        trebleEnc();
+        break;
+
+      case 1:
+        lcd.setCursor(0,1);
+        lcd.print(1);
+        break;
+
+      case 2:
+        bassEnc();
+        break;
+
+      case 3:
+        lcd.setCursor(0,1);
+        lcd.print(3);
+        break;
+        
+      case 4:
+        lcd.setCursor(0,1);
+        lcd.print(4);
+        break;
     }
 
-    if(millis() % 10 == 0 && digitalRead(Button) == 1 && buttonPress == 1 && (millis() - buttonDebounce) > delayDebounce) //double press borec
+    if(digitalRead(Button) == 1 && buttonPress == 1 && (millis() - buttonDebounce) > delayDebounce) //double press borec
     {
       buttonPress = 0;
       buttonDebounce = millis();
@@ -170,11 +260,11 @@ void handleEncoder()
   {
     if(digitalRead(DT) != currentStateCLK)
     {
-      changeMenuTab(-1);
+      command = Right;
     }
     else 
     {
-      changeMenuTab(1);
+      command = Left;
     }
   }
 
@@ -208,25 +298,20 @@ void codeIR()
   switch (IrReceiver.decodedIRData.command)
   {
     case 90:  // >
-      changeMenuTab(1);
-      break;
-
-    case 82:  // V
-      lcd.setCursor(5,1);
-      lcd.print("down");
+      command = Right;
       break;
 
     case 8:   // <
-      changeMenuTab(-1);
+      command = Left;
       break;
 
-    case 24:  
-      lcd.setCursor(5,1);
-      lcd.print("up");
-      break;
+    case 0: // OK buton
+      command = ButtonPress;
+    break;
 
     default:
-     break;
+      command = Empty;
+    break;
   }
 }
 
