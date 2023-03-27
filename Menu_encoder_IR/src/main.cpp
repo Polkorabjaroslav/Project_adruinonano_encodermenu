@@ -6,8 +6,8 @@
 
 #define CLK PD3
 #define DT  PD2
-#define SW  PC2
-#define Button PD4
+#define Button  PD6
+
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -30,9 +30,9 @@ uint8_t buttonDebounce = 0;
 uint8_t delayDebounce = 100;
 uint8_t buttonPress;
 
-int8_t gainStart = 0;
-int8_t volumeStart = 0;
-int8_t trebleStart = 0;
+int8_t gainStart = 1;
+int8_t volumeStart = 1;
+int8_t trebleStart =0;
 int8_t bassStart = 0;
 
 TDA7440 amp = TDA7440();
@@ -50,56 +50,53 @@ void trebleVal(int8_t trebleVal);
 void bassEnc();
 void bassVal(int8_t trebleVal);
 void subMenu();
+void volumeEnc();
+void volumeVal(int8_t volumeVal);
+void gainEnc();
+void gainVal(int8_t gainVal);
+void irRemote();
 
 void setup()
 {
   lcd.init();
   lcd.backlight();
   IrReceiver.enableIRIn();
+  amp.setInput(4);
   amp.inputGain(gainStart);
   amp.setVolume(volumeStart);
   amp.spkAtt(0);
-  amp.setSnd(1,bassStart); //1 Bassy
-  amp.setSnd(2,trebleStart);// 2 treble
-
+  amp.setSnd(bassStart,1); //1 Bassy
+  amp.setSnd(trebleStart,2);// 2 treble
   pinMode(CLK, INPUT);
   pinMode(DT, INPUT);
-  pinMode(SW, INPUT);
+  pinMode(Button, INPUT_PULLUP);
   lastStateCLK = digitalRead(CLK);
   menuOption();
+
 }
 
 void loop() 
 {
   actualMillis = millis();
 
-  if(actualMillis - irMillis > 100)
-  {
-    irMillis = actualMillis;
-    if(IrReceiver.decode())
-    {
-      codeIR();
-      if(actualMillis - resumMillis > 100)
-      {
-        resumMillis = actualMillis;
-        IrReceiver.resume();
-      }
-    }
-  }
-  buttonRead();
+  irRemote();
   handleEncoder();
   checkValues();
+  buttonRead();
+  
 }
 
 void buttonRead()
 {
-  if(digitalRead(Button) == 1 && buttonPress == 0)
+  if(digitalRead(Button) == 0  && buttonPress == 0)
   {
     if((millis() - buttonDebounce) > delayDebounce)
     {
+      
      buttonPress = 1;
-     subMenu();
      buttonDebounce = millis();
+     subMenu();
+     
     }
   }
 }
@@ -114,15 +111,13 @@ void subMenu()
       trebleEnc();
       break;
     case 1:
-      lcd.setCursor(0,1);
-      lcd.print(1);
+      volumeEnc();
       break;
     case 2:
       bassEnc();
       break;
     case 3:
-      lcd.setCursor(0,1);
-      lcd.print(3);
+      gainEnc();
       break;
     case 4:
       lcd.setCursor(0,1);
@@ -130,13 +125,13 @@ void subMenu()
       break;
     }
 
-    if(millis() % 10 == 0 && digitalRead(Button) == 1 && buttonPress == 1 && (millis() - buttonDebounce) > delayDebounce) //double press borec
+    if(digitalRead(Button) == 0 && buttonPress == 1 && (millis() - buttonDebounce) > delayDebounce) //double press borec
     {
       buttonPress = 0;
       buttonDebounce = millis();
       lcd.setCursor(0,1);
       lcd.print("         ");
-      break;  
+      return;  
     }
   }
 }
@@ -211,9 +206,13 @@ void codeIR()
       changeMenuTab(1);
       break;
 
-    case 82:  // V
-      lcd.setCursor(5,1);
-      lcd.print("down");
+    case 28:  // OK
+
+    if(buttonPress == 0)
+    {
+      buttonPress = 1;
+      subMenu();
+    }
       break;
 
     case 8:   // <
@@ -234,12 +233,12 @@ void trebleEnc()
 {
   if(trebleStart < 0)
   {
-    lcd.setCursor(6, 1);
+    lcd.setCursor(7, 1);
     lcd.print(trebleStart);
   }
   if(trebleStart >= 0)
   {
-    lcd.setCursor(6,1);
+    lcd.setCursor(8,1);
     lcd.print(" ");
     lcd.setCursor(7, 1);
     lcd.print(trebleStart);
@@ -273,19 +272,19 @@ void trebleVal(int8_t trebleVal)
   {
     trebleStart = 7;
   }
-  amp.setSnd(2,trebleStart);
+  amp.setSnd(trebleStart,2);
 }
 
 void bassEnc()
 {
   if(bassStart < 0)
   {
-    lcd.setCursor(6, 1);
+    lcd.setCursor(7, 1);
     lcd.print(bassStart);
   }
   if(bassStart >= 0)
   {
-    lcd.setCursor(6,1);
+    lcd.setCursor(8,1);
     lcd.print(" ");
     lcd.setCursor(7, 1);
     lcd.print(bassStart);
@@ -319,5 +318,121 @@ void bassVal(int8_t bassVal)
   {
     bassStart = 7;
   }
-  amp.setSnd(1,bassStart);
+  amp.setSnd(bassStart,1);
+}
+
+void volumeEnc()
+{
+  if(volumeStart < 10)
+  {
+    lcd.setCursor(8,1);
+    lcd.print(" ");
+    lcd.setCursor(7, 1);
+    lcd.print(volumeStart);
+  }
+  if(volumeStart > 10)
+  {
+    lcd.setCursor(7, 1);
+    lcd.print(volumeStart);
+    
+  }
+  
+  currentStateCLK = digitalRead(CLK);
+
+  if (currentStateCLK != lastStateCLK && currentStateCLK == 1) 
+  {
+    if(digitalRead(DT) != currentStateCLK)
+    {
+      volumeVal(-1);
+    }
+    else 
+    {
+      volumeVal(1);
+    }
+  }
+  lastStateCLK = currentStateCLK;
+}
+
+void volumeVal(int8_t volumeVal)  
+{
+  volumeStart += volumeVal;
+
+  if(volumeStart < 0)
+  {
+    volumeStart = 0;
+  }
+  if(volumeStart >= 13)
+  {
+    volumeStart = 13;
+  }
+  amp.setVolume(volumeStart);
+}
+
+void gainEnc()
+{
+  if(gainStart <= 0)
+  {
+    lcd.setCursor(7, 1);
+    lcd.print(0);
+  }
+  if(gainStart >= 0)
+  {
+    lcd.setCursor(8,1);
+    lcd.print(" ");
+    lcd.setCursor(7, 1);
+    lcd.print(gainStart);
+  }
+  
+  currentStateCLK = digitalRead(CLK);
+
+  if (currentStateCLK != lastStateCLK && currentStateCLK == 1) 
+  {
+    if(digitalRead(DT) != currentStateCLK)
+    {
+      gainVal(-1);
+    }
+    else 
+    {
+      gainVal(1);
+    }
+  }
+  lastStateCLK = currentStateCLK;
+}
+
+void gainVal(int8_t gainVal)  
+{
+  gainStart += gainVal;
+
+  if(gainStart < 0)
+  {
+    gainStart = 0;
+  }
+  if(gainStart >= 15)
+  {
+    gainStart = 15;
+  }
+  amp.inputGain(gainStart);
+}
+
+void irRemote()
+{
+
+  if(actualMillis - irMillis > 100)
+  {
+
+    irMillis = actualMillis;
+    if(IrReceiver.decode())
+    {
+
+      codeIR();
+
+      if(actualMillis - resumMillis > 100)
+      {
+
+        resumMillis = actualMillis;
+        IrReceiver.resume();
+
+      }
+    }
+  }
 }

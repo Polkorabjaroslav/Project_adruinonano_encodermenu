@@ -37,14 +37,53 @@ void TDA7440::inputGain(uint8_t gain)   //gain
 
 void TDA7440::setVolume(uint8_t volume) //volume
 {
-    if (volume == 0)
+    switch (volume)
     {
+    case 0:
         volume = TDA7440_Mute;
+        break;
+    case 13: 
+        volume = 0x00;
+        break;
+    case 12:
+        volume = 0x01;
+        break;
+    case 11:
+        volume = 0x02;
+        break;
+    case 10:
+        volume = 0x03;
+        break;
+    case 9:
+        volume = 0x04;
+        break;
+    case 8:
+        volume = 0x05;
+        break;
+    case 7:
+        volume = 0x06;
+        break;
+    case 6:
+        volume = 0x07;
+        break;
+    case 5:
+        volume = 0x08;
+        break;
+    case 4:
+        volume = 0x10;
+        break;
+    case 3:
+        volume = 0x18;
+        break;
+    case 2:
+        volume = 0x20;
+        break;
+    case 1:
+        volume = 0x28;
+        break;
     }
-    else
-    {
-        volume = 48 - volume;
-    }
+    
+    
     writeWire(TDA7440_Volume, volume);
 }
 
@@ -63,32 +102,43 @@ void TDA7440::setSnd(int8_t val, uint8_t sel) //1Bass and 2Treble settings
     switch (val)
     {
     case -7:
-        val = 0;
+        val = 0x00;
         break;
     case -6:
-        val = 1;
+        val = 0x01;
         break;
     case -5:
-        val = 2;
+        val = 0x02;
         break;
     case -4:
-        val = 3;
+        val = 0x03;
         break;
     case -3:
-        val = 4;
+        val = 0x04;
         break;
     case -2:
-        val = 5;
+        val = 0x05;
         break;
     case -1:
-        val = 6;
+        val = 0x06;
         break;
     case 0:
-        val = 7;
+        val = 0x07;
         break;
-    
-    default:
-        break;
+    case 1:
+        val = 0b1110;
+    case 2:
+        val = 0b1101;
+    case 3:
+        val = 0b1100;
+    case 4:
+        val = 0x1011;
+    case 5:
+        val = 0x1010;
+    case 6:
+        val = 0x1001;
+    case 7:
+        val = 0x1000;
     }
     writeWire(sel,val);
 }
@@ -104,54 +154,53 @@ void TDA7440::spkAtt(uint8_t atten)
     {
     case 0:
         atten = 0;
-        break;
-    case 1:
-        atten = 1;
-        break;
-    case 2:
-        atten = 2;
-        break;
-    case 3:
-        atten = 3;
-        break;
-    case 4:
-        atten = 4;
-        break;
-    case 5:
-        atten = 5;
-        break;
-    case 6:
-        atten = 6;
-        break;
-    case 7:
-        atten = 7;
-        break;
-    case 8:
-        atten = 8;
-        break;
-    case 9:
-        atten = 16;
-        break;
-    case 10:
-        atten = 24;
-        break;
-    case 11:
-        atten = 32;
-        break;
-    case 12:
-        atten = 40;
-        break;
-    case 13:
-        atten = 48;
-        break;
-    case 14:
-        atten = 56;
+    case 16:
+        atten = 0x01;
         break;
     case 15:
-        atten = 64;
+        atten = 0x02;
         break;
-    case 16:
-        atten = 72;
+    case 14:
+        atten= 0x03;
+        break;
+    case 13:
+        atten = 0x04;
+        break;
+    case 12:
+        atten = 0x05;
+        break;
+    case 11:
+        atten = 0x06;
+        break;
+    case 10:
+        atten = 0x07;
+        break;
+    case 9:
+        atten = 0x08;
+        break;
+    case 8:
+        atten = 0x10;
+        break;
+    case 7:
+        atten = 0x18;
+        break;
+    case 6:
+        atten = 0x20;
+        break;
+    case 5:
+        atten = 0x28;
+        break;
+    case 4:
+        atten = 0x30;
+        break;
+    case 3:
+        atten = 0x38;
+        break;
+    case 2:
+        atten = 0x40;
+        break;
+    case 1:
+        atten = 0x48;
         break;
     }
     writeWire(TDA7440_Attenuate_l,atten);
