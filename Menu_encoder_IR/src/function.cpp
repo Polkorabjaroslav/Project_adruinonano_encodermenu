@@ -126,19 +126,26 @@ void TDA7440::setSnd(int8_t val, uint8_t sel) //1Bass and 2Treble settings
         val = 0x07;
         break;
     case 1:
-        val = 0b1110;
+        val = 0x0E;
+        break;
     case 2:
-        val = 0b1101;
+        val = 0x0D;
+        break;
     case 3:
-        val = 0b1100;
+        val = 0x0C;
+        break;
     case 4:
-        val = 0x1011;
+        val = 0x0B;
+        break;
     case 5:
-        val = 0x1010;
+        val = 0x0A;
+        break;
     case 6:
-        val = 0x1001;
+        val = 0x09;
+        break;
     case 7:
-        val = 0x1000;
+        val = 0x08;
+        break;
     }
     writeWire(sel,val);
 }
