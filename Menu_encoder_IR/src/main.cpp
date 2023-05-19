@@ -4,6 +4,7 @@
 #include <LiquidCrystal_I2C.h>
 #include "TDA7440.h"
 
+
 #define CLK PD3
 #define DT  PD2
 #define Button  PD6
@@ -11,11 +12,10 @@
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-IRrecv receiver(7);
+IRrecv receiver(PD5);
 
-int8_t numOptions = 4;
-const char* menu[] = {"Treble", "Volume", "Bass", "Gain","Equalizer"};
-const char* submenu[] = {"Middle","Bass","Flat"};
+int8_t numOptions = 3;
+const char* menu[] = {"Treble", "Volume", "Bass", "Gain"};
 int8_t currentOption = 0;
 
 int16_t lastStateCLK;
@@ -26,12 +26,12 @@ uint8_t irMillis;
 uint8_t resumMillis;  
 
 uint8_t buttonoption;
-uint8_t buttonDebounce = 0;
-uint8_t delayDebounce = 100;
+uint8_t buttonDebounce = 100;
+uint8_t delayDebounce = 150;
 uint8_t buttonPress;
 
 int8_t gainStart = 0;
-int8_t volumeStart = 1;
+int8_t volumeStart = 5;
 int8_t trebleStart =0;
 int8_t bassStart = 0;
 
@@ -92,7 +92,7 @@ void buttonRead()
   {
     if((millis() - buttonDebounce) > delayDebounce)
     {
-      
+  
      buttonPress = 1;
      buttonDebounce = millis();
      subMenu();
@@ -105,10 +105,11 @@ void subMenu()
 {
   while (true)
   {
+    irRemote();
     switch (currentOption)
     {
     case 0:
-      trebleEnc();
+      trebleEnc();      
       break;
     case 1:
       volumeEnc();
@@ -119,10 +120,6 @@ void subMenu()
     case 3:
       gainEnc();
       break;
-    case 4:
-      lcd.setCursor(0,1);
-      lcd.print(4);
-      break;
     }
 
     if(digitalRead(Button) == 0 && buttonPress == 1 && (millis() - buttonDebounce) > delayDebounce) //double press borec
@@ -130,7 +127,7 @@ void subMenu()
       buttonPress = 0;
       buttonDebounce = millis();
       lcd.setCursor(0,1);
-      lcd.print("         ");
+      lcd.print("                ");
       return;  
     }
   }
@@ -203,7 +200,21 @@ void codeIR()
   switch (IrReceiver.decodedIRData.command)
   {
     case 90:  // >
-      changeMenuTab(1);
+      if (buttonPress == 0)
+        changeMenuTab(1);
+      if (buttonPress == 1)
+      {
+        switch (currentOption)
+        {
+          case 0:
+            trebleVal(1);
+            break;
+          
+          default:
+            break;
+        }
+      }
+
       break;
 
     case 28:  // OK
@@ -213,11 +224,25 @@ void codeIR()
       buttonPress = 1;
       subMenu();
     }
+    else
+    buttonPress = 0;
       break;
 
     case 8:   // <
-      changeMenuTab(-1);
-      break;
+      if (buttonPress == 0)
+        changeMenuTab(-1);
+      if (buttonPress == 1)
+      {
+        switch (currentOption)
+        {
+          case 0:
+            trebleVal(-1);
+            break;
+          
+          default:
+            break;
+        }
+      }
 
     case 24:  
       lcd.setCursor(5,1);
@@ -235,13 +260,19 @@ void trebleEnc()
   {
     lcd.setCursor(7, 1);
     lcd.print(trebleStart);
+    lcd.print("dB");
   }
   if(trebleStart >= 0)
   {
-    lcd.setCursor(8,1);
-    lcd.print(" ");
+    lcd.setCursor(1,1);
+    if(millis()%30 == 0)
+    {
+      lcd.print("           ");
+    }
+    
     lcd.setCursor(7, 1);
     lcd.print(trebleStart);
+    lcd.print("dB");
   }
   
   currentStateCLK = digitalRead(CLK);
@@ -281,13 +312,18 @@ void bassEnc()
   {
     lcd.setCursor(7, 1);
     lcd.print(bassStart);
+    lcd.print("dB");
   }
   if(bassStart >= 0)
   {
-    lcd.setCursor(8,1);
-    lcd.print(" ");
+    lcd.setCursor(1,1);
+    if(millis()%30 == 0)
+    {
+      lcd.print("              ");
+    }
     lcd.setCursor(7, 1);
     lcd.print(bassStart);
+    lcd.print("dB");
   }
   
   currentStateCLK = digitalRead(CLK);
@@ -325,16 +361,20 @@ void volumeEnc()
 {
   if(volumeStart < 10)
   {
-    lcd.setCursor(8,1);
-    lcd.print(" ");
+    lcd.setCursor(1,1);
+    if(millis()%25 == 0)
+    {
+      lcd.print("           ");
+    }
     lcd.setCursor(7, 1);
     lcd.print(volumeStart);
+    lcd.print("dB");
   }
   if(volumeStart > 10)
   {
     lcd.setCursor(7, 1);
     lcd.print(volumeStart);
-    
+    lcd.print("dB");
   }
   
   currentStateCLK = digitalRead(CLK);
@@ -374,13 +414,17 @@ void gainEnc()
   {
     lcd.setCursor(7, 1);
     lcd.print(0);
+    lcd.print("dB");
   }
   if(gainStart >= 0)
   {
-    lcd.setCursor(8,1);
-    lcd.print(" ");
+    if(millis()%30 == 0)
+    {
+      lcd.print("           ");
+    }
     lcd.setCursor(7, 1);
     lcd.print(gainStart);
+    lcd.print("dB");
   }
   
   currentStateCLK = digitalRead(CLK);
@@ -436,3 +480,4 @@ void irRemote()
     }
   }
 }
+
