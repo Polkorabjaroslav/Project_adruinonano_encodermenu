@@ -30,7 +30,7 @@ uint8_t buttonDebounce = 0;
 uint8_t delayDebounce = 100;
 uint8_t buttonPress;
 
-int8_t gainStart = 1;
+int8_t gainStart = 0;
 int8_t volumeStart = 1;
 int8_t trebleStart =0;
 int8_t bassStart = 0;
@@ -48,7 +48,7 @@ void buttonRead();
 void trebleEnc();
 void trebleVal(int8_t trebleVal);
 void bassEnc();
-void bassVal(int8_t trebleVal);
+void bassVal(int8_t bassVal);
 void subMenu();
 void volumeEnc();
 void volumeVal(int8_t volumeVal);
@@ -67,12 +67,12 @@ void setup()
   amp.spkAtt(0);
   amp.setSnd(bassStart,1); //1 Bassy
   amp.setSnd(trebleStart,2);// 2 treble
+  amp.spkAtt(0);
   pinMode(CLK, INPUT);
   pinMode(DT, INPUT);
   pinMode(Button, INPUT_PULLUP);
   lastStateCLK = digitalRead(CLK);
   menuOption();
-
 }
 
 void loop() 
