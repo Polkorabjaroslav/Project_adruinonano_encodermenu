@@ -43,7 +43,6 @@ void handleEncoder();
 void checkValues();
 void changeMenuTab(uint8_t value);
 void printArrows();
-void clearLine(uint8_t line);
 void buttonRead();
 void trebleEnc();
 void trebleVal(int8_t trebleVal);
@@ -61,16 +60,20 @@ void setup()
   lcd.init();
   lcd.backlight();
   IrReceiver.enableIRIn();
+  lcd.setCursor(4,0);
+  lcd.print("Vitej");
+
   amp.setInput(4);
   amp.inputGain(gainStart);
   amp.setVolume(volumeStart);
-  amp.spkAtt(0);
   amp.setSnd(bassStart,1); //1 Bassy
   amp.setSnd(trebleStart,2);// 2 treble
   amp.spkAtt(0);
+
   pinMode(CLK, INPUT);
   pinMode(DT, INPUT);
   pinMode(Button, INPUT_PULLUP);
+
   lastStateCLK = digitalRead(CLK);
   menuOption();
 }
@@ -78,7 +81,7 @@ void setup()
 void loop() 
 {
   actualMillis = millis();
-
+  
   irRemote();
   handleEncoder();
   checkValues();
@@ -105,7 +108,9 @@ void subMenu()
 {
   while (true)
   {
+    
     irRemote();
+
     switch (currentOption)
     {
     case 0:
@@ -181,77 +186,13 @@ void printArrows()
   lcd.print(">");
 }
 
-void clearLine(uint8_t line)
-{
-  lcd.setCursor(4, line);
-  lcd.print("          ");
-}
-
 void menuOption()
 {
   printArrows();
-  clearLine(0);
+  lcd.setCursor(4,0);
+  lcd.print("          ");
   lcd.setCursor(8 - strlen(menu[currentOption]) / 2, 0);
   lcd.print(menu[currentOption]);  
-}
-
-void codeIR()
-{
-  switch (IrReceiver.decodedIRData.command)
-  {
-    case 90:  // >
-      if (buttonPress == 0)
-        changeMenuTab(1);
-      if (buttonPress == 1)
-      {
-        switch (currentOption)
-        {
-          case 0:
-            trebleVal(1);
-            break;
-          
-          default:
-            break;
-        }
-      }
-
-      break;
-
-    case 28:  // OK
-
-    if(buttonPress == 0)
-    {
-      buttonPress = 1;
-      subMenu();
-    }
-    else
-    buttonPress = 0;
-      break;
-
-    case 8:   // <
-      if (buttonPress == 0)
-        changeMenuTab(-1);
-      if (buttonPress == 1)
-      {
-        switch (currentOption)
-        {
-          case 0:
-            trebleVal(-1);
-            break;
-          
-          default:
-            break;
-        }
-      }
-
-    case 24:  
-      lcd.setCursor(5,1);
-      lcd.print("up");
-      break;
-
-    default:
-     break;
-  }
 }
 
 void trebleEnc()
@@ -481,3 +422,67 @@ void irRemote()
   }
 }
 
+void codeIR()
+{
+  switch (IrReceiver.decodedIRData.command)
+  {
+    case 90:  // >
+      changeMenuTab(1);
+      break;
+
+    case 28:  // OK
+
+    if(buttonPress == 0)
+    {
+      buttonPress = 1;
+      subMenu();
+    }
+    else
+    {
+      buttonPress = 0;
+    }
+      
+      break;
+
+    case 8:   // <
+      changeMenuTab(-1);
+      break;
+
+    case 24:  
+      switch (currentOption)
+      {
+      case 0:
+        trebleVal(1);      
+        break;
+      case 1:
+        volumeVal(1);
+        break;
+      case 2:
+        bassVal(1);
+        break;
+      case 3:
+        gainVal(1);
+        break;
+      }
+     break;
+    case 82: 
+      switch (currentOption)
+      {
+      case 0:
+        trebleVal(-1);      
+        break;
+      case 1:
+        volumeVal(-1);
+        break;
+      case 2:
+        bassVal(-1);
+        break;
+      case 3:
+        gainVal(-1);
+        break;
+      }
+     break;
+    default:
+     break;
+  }
+}
