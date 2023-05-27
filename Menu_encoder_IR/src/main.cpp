@@ -1,3 +1,12 @@
+/***********************************************************************
+ * 
+ * Code for equalizer menu with encoder.
+ * ATmega328P (Arduino Nano), 16 MHz, AVR 8-bit 
+ *
+ * Copyright (c) 2023 Jaroslav Polkorab
+ * This work is licensed under the terms of the MIT license.
+ *
+ **********************************************************************/
 #include <Arduino.h>
 #include <Wire.h>
 #include <IRremote.hpp>
